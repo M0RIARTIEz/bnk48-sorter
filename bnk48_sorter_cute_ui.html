@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BNK48 Oshi Sorter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&family=Mali:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Kanit', sans-serif; 
+            background: linear-gradient(135deg, #fce7f3 0%, #f3e8ff 100%);
+            min-height: 100vh;
+        }
+        h1, h2, .font-mali { font-family: 'Mali', cursive; }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 32px 0 rgba(236, 72, 153, 0.1);
+        }
+
+        .member-card { 
+            cursor: pointer; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            background: white;
+        }
+        .member-card:hover { 
+            transform: translateY(-8px) scale(1.02); 
+            box-shadow: 0 20px 25px -5px rgba(236, 72, 153, 0.2);
+            border-color: #fbcfe8;
+        }
+        .member-card:active { transform: scale(0.95); }
+
+        .member-img { 
+            width: 100%; 
+            max-width: 220px; 
+            aspect-ratio: 1/1; 
+            object-fit: cover; 
+            border-radius: 2rem; 
+            margin: 0 auto;
+            border: 4px solid #fdf2f8;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-action {
+            transition: all 0.2s;
+        }
+        .btn-action:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .btn-action:active { transform: scale(0.95); }
+    </style>
+</head>
+<body class="flex flex-col items-center py-6 px-4 md:py-12">
+
+    <div class="max-w-4xl w-full glass-panel rounded-[2rem] p-6 md:p-10 relative overflow-hidden">
+        <!-- ของตกแต่ง Background -->
+        <div class="absolute top-[-50px] right-[-50px] w-32 h-32 bg-pink-300 rounded-full mix-blend-multiply filter blur-2xl opacity-50"></div>
+        <div class="absolute bottom-[-50px] left-[-50px] w-32 h-32 bg-purple-300 rounded-full mix-blend-multiply filter blur-2xl opacity-50"></div>
+
+        <div class="text-center mb-8 relative z-10">
+            <h1 class="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500 mb-2">
+                🌸 BNK48 Sorter 🌸
+            </h1>
+            <p class="text-gray-600 font-mali font-semibold">เลือกคนที่ใช่ เพื่อค้นหาอันดับคามิโอชิของคุณ!</p>
+        </div>
+
+        <!-- หน้าจอคัดเลือก -->
+        <div id="sort-screen" class="block relative z-10">
+            <div class="flex justify-between text-sm text-pink-600 mb-2 font-bold">
+                <span>ความคืบหน้า</span>
+                <span id="progress-text">0%</span>
+            </div>
+            <div class="w-full bg-white/50 rounded-full h-4 mb-8 p-1 shadow-inner">
+                <div id="progress-bar" class="bg-gradient-to-r from-pink-400 to-purple-400 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center justify-center">
+                <!-- Member A -->
+                <div id="btn-left" class="member-card p-6 rounded-[2rem] border-2 border-transparent text-center" onclick="selectMember(-1)">
+                    <img id="img-left" src="" alt="Member A" class="member-img mb-4">
+                    <h2 id="name-left" class="text-2xl font-bold text-gray-800">Member A</h2>
+                    <p id="team-left" class="text-sm px-3 py-1 bg-purple-100 text-purple-600 rounded-full inline-block mt-2 font-semibold">Team</p>
+                </div>
+
+                <!-- Member B -->
+                <div id="btn-right" class="member-card p-6 rounded-[2rem] border-2 border-transparent text-center" onclick="selectMember(1)">
+                    <img id="img-right" src="" alt="Member B" class="member-img mb-4">
+                    <h2 id="name-right" class="text-2xl font-bold text-gray-800">Member B</h2>
+                    <p id="team-right" class="text-sm px-3 py-1 bg-pink-100 text-pink-600 rounded-full inline-block mt-2 font-semibold">Team</p>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-4 mt-8">
+                <button onclick="selectMember(0)" class="btn-action px-8 py-3 bg-white text-gray-700 font-mali font-bold rounded-full shadow-sm border border-gray-200 hover:bg-gray-50">
+                    🤷‍♀️ เลือกไม่ได้ (เสมอ)
+                </button>
+                <button onclick="undo()" id="btn-undo" class="btn-action px-8 py-3 bg-red-50 text-red-500 font-mali font-bold rounded-full shadow-sm border border-red-100 opacity-50 cursor-not-allowed" disabled>
+                    ⏪ ย้อนกลับ
+                </button>
+            </div>
+        </div>
+
+        <!-- หน้าจอผลลัพธ์ -->
+        <div id="result-screen" class="hidden relative z-10">
+            <h2 class="text-3xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500 mb-6">
+                👑 คามิโอชิของคุณคือ... 👑
+            </h2>
+            <div class="bg-white rounded-[2rem] shadow-sm overflow-hidden border border-pink-100">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gradient-to-r from-pink-100 to-purple-100 text-pink-800 font-mali">
+                            <th class="p-4 text-center">Rank</th>
+                            <th class="p-4">Profile</th>
+                            <th class="p-4">Name</th>
+                            <th class="p-4 hidden md:table-cell">Team / Gen</th>
+                        </tr>
+                    </thead>
+                    <tbody id="result-table">
+                        <!-- JS จะสร้างผลลัพธ์ที่นี่ -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="text-center mt-8">
+                <button onclick="location.reload()" class="btn-action px-10 py-4 bg-gradient-to-r from-pink-500 to-purple-500 text-white font-mali font-bold text-lg rounded-full shadow-lg">
+                    🔄 เล่นใหม่อีกครั้ง
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const members = [
+            // Team BIII
+            { name: "Fame (เฟม)", team: "Team BIII / Gen 3", image: "images/fame.png" },
+            { name: "Hoop (ฮูพ)", team: "Team BIII / Gen 3", image: "images/hoop.png" },
+            { name: "Janry (แจนรี่)", team: "Team BIII / Gen 4", image: "images/janry.png" },
+            { name: "Luksorn (ลูกศร)", team: "Team BIII / Gen 6", image: "images/luksorn.png" },
+            { name: "Mail (เมล)", team: "Team BIII / Gen 6", image: "images/mail.png" },
+            { name: "Marine (มารีน)", team: "Team BIII / Gen 4", image: "images/marine.png" },
+            { name: "Micha (มิชา)", team: "Team BIII / Gen 4", image: "images/micha.png" },
+            { name: "Monet (โมเน่ต์)", team: "Team BIII / Gen 3", image: "images/monet.png" },
+            { name: "Patt (แพท)", team: "Team BIII / Gen 4", image: "images/patt.png" },
+            { name: "Praew (แพรว)", team: "Team BIII / Gen 6", image: "images/praew.png" },
+            { name: "Wawa (วาว่า)", team: "Team BIII / Gen 4", image: "images/wawa.png" },
+            
+            // Team NV
+            { name: "Arlee (อาหลี)", team: "Team NV / Gen 5", image: "images/arlee.png" },
+            { name: "Berry (เบอร์รี่)", team: "Team NV / Gen 4", image: "images/berry.png" },
+            { name: "Emmy (เอ็มมี่)", team: "Team NV / Gen 4", image: "images/emmy.png" },
+            { name: "Jew (จิว)", team: "Team NV / Gen 5", image: "images/jew.png" },
+            { name: "L (แอล)", team: "Team NV / Gen 4", image: "images/l.png" },
+            { name: "Palmmy (ปาล์มมี่)", team: "Team NV / Gen 4", image: "images/palmmy.png" },
+            { name: "Pancake (แพนเค้ก)", team: "Team NV / Gen 3", image: "images/pancake.png" },
+            { name: "Proud (ภราว)", team: "Team NV / Gen 5", image: "images/proud.png" },
+            { name: "Saonoi (สาวน้อย)", team: "Team NV / Gen 5", image: "images/saonoi.png" },
+            { name: "Sindy (ซินดี้)", team: "Team NV / Gen 4", image: "images/sindy.png" },
+            { name: "Yoghurt (โยเกิร์ต)", team: "Team NV / Gen 3", image: "images/yoghurt.png" },
+            
+            // Trainee
+            { name: "Blythe (บลายธ์)", team: "Trainee / Gen 6", image: "images/blythe.png" },
+            { name: "Cartoon (การ์ตูน)", team: "Trainee / Gen 6", image: "images/cartoon.png" },
+            { name: "Galeya (เกลญ่า)", team: "Trainee / Gen 5", image: "images/galeya.png" },
+            { name: "Grape (เกรพ)", team: "Trainee / Gen 6", image: "images/grape.png" },
+            { name: "Inkcha (อิ้งค์ชา)", team: "Trainee / Gen 6", image: "images/inkcha.png" },
+            { name: "Khaimook (ไข่มุก)", team: "Trainee / Gen 5", image: "images/khaimook.png" },
+            { name: "Khowjow (ข้าวจ้าว)", team: "Trainee / Gen 6", image: "images/khowjow.png" },
+            { name: "Mayji (เมย์จิ)", team: "Trainee / Gen 5", image: "images/mayji.png" },
+            { name: "Mint (มิ้นท์)", team: "Trainee / Gen 6", image: "images/mint.png" },
+            { name: "Mirin (มิริน)", team: "Trainee / Gen 6", image: "images/mirin.png" },
+            { name: "Nall (แนล)", team: "Trainee / Gen 5", image: "images/nall.png" },
+            { name: "Nammonn (น้ำมนต์)", team: "Trainee / Gen 5", image: "images/nammonn.png" },
+            { name: "Neen (นีน)", team: "Trainee / Gen 5", image: "images/neen.png" },
+            { name: "Niya (นีญ่า)", team: "Trainee / Gen 5", image: "images/niya.png" },
+            { name: "Rose (โรส)", team: "Trainee / Gen 6", image: "images/rose.png" }
+        ];
+
+        // ระบบ Queue-based Merge Sort
+        let queue = [];
+        let cmp1 = [], cmp2 = [];
+        let head1 = 0, head2 = 0;
+        let tempMerged = [];
+        let historyStack = [];
+        let battleCount = 0;
+        const totalBattles = Math.ceil(members.length * Math.log2(members.length)) - members.length/2;
+
+        function initList() {
+            const shuffled = [...members].sort(() => Math.random() - 0.5);
+            queue = shuffled.map(m => [{...m, tie: false}]);
+            nextMerge();
+        }
+
+        function nextMerge() {
+            if (queue.length <= 1) {
+                showResult(queue[0]);
+                return;
+            }
+            cmp1 = queue.shift();
+            cmp2 = queue.shift();
+            head1 = 0;
+            head2 = 0;
+            tempMerged = [];
+            showBattle();
+        }
+
+        function showBattle() {
+            if (head1 >= cmp1.length) {
+                tempMerged.push(...cmp2.slice(head2));
+                queue.push(tempMerged);
+                nextMerge();
+                return;
+            }
+            if (head2 >= cmp2.length) {
+                tempMerged.push(...cmp1.slice(head1));
+                queue.push(tempMerged);
+                nextMerge();
+                return;
+            }
+
+            let p = Math.min(100, Math.floor((battleCount / totalBattles) * 100));
+            document.getElementById('progress-bar').style.width = p + '%';
+            document.getElementById('progress-text').innerText = p + '%';
+
+            let leftMember = cmp1[head1];
+            document.getElementById('name-left').innerText = leftMember.name;
+            document.getElementById('team-left').innerText = leftMember.team;
+            
+            // เพิ่ม onerror เพื่อป้องกันกรณีหารูปไม่เจอ
+            let imgLeft = document.getElementById('img-left');
+            imgLeft.src = leftMember.image;
+            imgLeft.onerror = function() {
+                this.src = `https://ui-avatars.com/api/?name=${leftMember.name.charAt(0)}&background=F3E8FF&color=9333EA&size=400`;
+            };
+
+            let rightMember = cmp2[head2];
+            document.getElementById('name-right').innerText = rightMember.name;
+            document.getElementById('team-right').innerText = rightMember.team;
+            
+            let imgRight = document.getElementById('img-right');
+            imgRight.src = rightMember.image;
+            imgRight.onerror = function() {
+                this.src = `https://ui-avatars.com/api/?name=${rightMember.name.charAt(0)}&background=FCE7F3&color=DB2777&size=400`;
+            };
+        }
+
+        function saveState() {
+            historyStack.push(JSON.parse(JSON.stringify({ queue, cmp1, cmp2, head1, head2, tempMerged, battleCount })));
+            document.getElementById('btn-undo').disabled = false;
+            document.getElementById('btn-undo').classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+
+        function undo() {
+            if (historyStack.length === 0) return;
+            const state = historyStack.pop();
+            queue = state.queue; cmp1 = state.cmp1; cmp2 = state.cmp2;
+            head1 = state.head1; head2 = state.head2;
+            tempMerged = state.tempMerged; battleCount = state.battleCount;
+            
+            if (historyStack.length === 0) {
+                document.getElementById('btn-undo').disabled = true;
+                document.getElementById('btn-undo').classList.add('opacity-50', 'cursor-not-allowed');
+            }
+            showBattle();
+        }
+
+        function selectMember(choice) {
+            saveState();
+            battleCount++;
+
+            if (choice === -1) { 
+                tempMerged.push(cmp1[head1++]);
+            } else if (choice === 1) { 
+                tempMerged.push(cmp2[head2++]);
+            } else { 
+                cmp1[head1].tie = true;
+                tempMerged.push(cmp1[head1++]);
+                tempMerged.push(cmp2[head2++]);
+            }
+            showBattle();
+        }
+
+        function showResult(resultList) {
+            document.getElementById('sort-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+
+            let html = '';
+            let rank = 1;
+            let drawCount = 1;
+
+            for (let i = 0; i < resultList.length; i++) {
+                let member = resultList[i];
+                let rankStyle = "bg-white text-gray-700";
+                let rankIcon = rank;
+                
+                if (rank === 1) { rankStyle = "bg-[#fffbeb] text-yellow-600 border-l-4 border-yellow-400"; rankIcon = "🥇 " + rank; }
+                else if (rank === 2) { rankStyle = "bg-gray-50 text-gray-600 border-l-4 border-gray-400"; rankIcon = "🥈 " + rank; }
+                else if (rank === 3) { rankStyle = "bg-orange-50 text-orange-600 border-l-4 border-orange-400"; rankIcon = "🥉 " + rank; }
+                else if (rank <= 7) { rankStyle = "bg-pink-50 text-pink-600 font-semibold"; } 
+
+                html += `
+                    <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors ${rankStyle}">
+                        <td class="p-4 text-xl font-bold text-center">${rankIcon}</td>
+                        <td class="p-4 w-20">
+                            <img src="${member.image}" alt="${member.name}" 
+                                 class="w-14 h-14 rounded-full object-cover shadow-sm border-2 border-white"
+                                 onerror="this.src='https://ui-avatars.com/api/?name=${member.name.charAt(0)}&background=F3E8FF&color=9333EA&size=400'">
+                        </td>
+                        <td class="p-4 font-bold">${member.name}</td>
+                        <td class="p-4 text-sm hidden md:table-cell">${member.team}</td>
+                    </tr>
+                `;
+
+                if (member.tie) {
+                    drawCount++;
+                } else {
+                    rank += drawCount;
+                    drawCount = 1;
+                }
+            }
+            document.getElementById('result-table').innerHTML = html;
+        }
+
+        window.onload = initList;
+    </script>
+</body>
+</html>
